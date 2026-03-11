@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostSaaS | AI CV Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { background: #f8fafc; font-family: sans-serif; }
+        #cv-a4 { width: 210mm; min-height: 297mm; background: white; margin: 0 auto; display: flex; box-shadow: 0 0 30px rgba(0,0,0,0.1); }
+        .side { width: 33%; background: #0f172a; color: white; padding: 30px 20px; }
+        .main { width: 67%; padding: 40px; color: #1e293b; }
+        .pic { width: 130px; height: 130px; border-radius: 50%; border: 3px solid #3b82f6; overflow: hidden; margin: 0 auto 25px; background: #334155; }
+        .pic img { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row h-screen overflow-hidden">
+
+    <aside class="w-full lg:w-[400px] bg-white border-r p-6 overflow-y-auto">
+        <h2 class="text-xl font-bold mb-5 text-blue-700">GhostSaaS AI CV 🚀</h2>
+        <div class="space-y-4">
+            <input type="file" accept="image/*" class="w-full text-sm" onchange="preview(event)">
+            <input type="text" id="n" class="w-full border p-2 rounded" placeholder="Ad Soyad" onkeyup="s()">
+            <input type="text" id="p" class="w-full border p-2 rounded" placeholder="Pozisyon" onkeyup="s()">
+            <input type="text" id="e" class="w-full border p-2 rounded" placeholder="E-posta" onkeyup="s()">
+            <input type="text" id="sk" class="w-full border p-2 rounded" placeholder="Yetenekler (virgülle)" onkeyup="s()">
+            <textarea id="ex" class="w-full border p-2 rounded" rows="4" placeholder="Kısa deneyimler..."></textarea>
+            <button onclick="goAI()" id="btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition">AI İle Oluştur ✨</button>
+            <button onclick="pdf()" class="w-full bg-slate-900 text-white font-bold py-3 rounded">PDF İndir</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 bg-slate-200 p-8 overflow-y-auto">
+        <div id="cv-a4">
+            <div class="side">
+                <div class="pic"><img id="img" src="" alt=""></div>
+                <div class="mb-5 text-sm"><b>İLETİŞİM:</b><br><span id="cN">E-posta</span></div>
+                <div class="text-sm"><b>YETENEKLER:</b><br><div id="cS"></div></div>
+            </div>
+            <div class="main">
+                <h1 id="cNm" class="text-4xl font-bold uppercase">İSİM SOYİSİM</h1>
+                <h2 id="cP" class="text-lg font-bold text-blue-600 uppercase mb-10">POZİSYON</h2>
+                <div id="cC" class="text-sm leading-relaxed">AI içerik buraya gelecek...</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function s() {
+            document.getElementById('cNm').innerText = document.getElementById('n').value || 'İSİM SOYİSİM';
+            document.getElementById('cP').innerText = document.getElementById('p').value || 'POZİSYON';
+            document.getElementById('cN').innerText = document.getElementById('e').value || 'E-posta';
+            const sk = document.getElementById('sk').value;
+            document.getElementById('cS').innerHTML = sk ? sk.split(',').map(v => `• ${v.trim()}<br>`).join('') : '';
+        }
+        function preview(e) {
+            const r = new FileReader();
+            r.onload = () => document.getElementById('img').src = r.result;
+            r.readAsDataURL(e.target.files[0]);
+        }
+        async function goAI() {
+            const b = document.getElementById('btn'); b.innerText = "Yazılıyor..."; b.disabled = true;
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({data: {name: document.getElementById('n').value, position: document.getElementById('p').value, skills: document.getElementById('sk').value, achievements: document.getElementById('ex').value}})
+            });
+            const d = await res.json();
+            document.getElementById('cC').innerHTML = d.text;
+            b.innerText = "AI İle Oluştur ✨"; b.disabled = false;
+        }
+        function pdf() {
+            html2pdf().set({margin:0, filename:'CV.pdf', html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4'}}).from(document.getElementById('cv-a4')).save();
+        }
+    </script>
+</body>
+</html>
